@@ -1,72 +1,93 @@
-import RPi.GPIO as GPIO
-import threading
+# Character LCD
+# (only supports 16x2, since that is the only size I'm interested in xD)
+import Adafruit_CharLCD as AF_LCD
+from threading import Timer
 
-class LED(object):
-    
-    def __init__(self, id, pin):
-        self.id = id
-        self.pin = pin
-        GPIO.setup(self.pin, GPIO.OUT)
+"""
+Default pin setup
+=================
+lcd_rs = 16
+lcd_en = 19
+lcd_d4 = 25
+lcd_d5 = 11
+lcd_d6 = 23
+lcd_d7 = 22
+lcd_backlight = 2
+"""
 
-    def is_active(self):
-        return GPIO.input(self.pin) == 1
+class LCD(object):
+
+    DIRECTION_RIGHT = 0
+    DIRECTION_LEFT = 1
+
+    def __init__(self, rs=16, en=19, d4=25, d5=11, d6=23, d7=22):
+        self.lcd = AF_LCD.Adafruit_CharLCD(rs, en, d4, d5, d6, d7, 16, 2)
+        self.rolling_text = None
         
-    def set_state(self, on):
-        if on:
-            GPIO.output(self.pin, 1)
+    def width(self):
+        return 16
+        
+    def height(self):
+        return 2
+        
+    def enable(self, enable):
+        self.lcd.enable_display(enable)
+        
+    def enable_backlight(self, enable):
+        self.lcd.set_backlight(1 if enable else 0)
+        
+    def set_text(self, text, clean=True, center=False):
+        self.rolling_text = None        
+        if clean:
+            self.clear()
+        if center:
+            def center_line(line):
+                if len(line) < 16:
+                    line = " "*int((self.width()-len(line))/2) + line
+                return line
+            text = "\n".join(list(map(center_line, text.split("\n"))))
+
+        print("Printing '%s'" % text)
+        self.lcd.message(text)
+        
+    def roll(self, text, delay=0.5):
+        if len(text) < 16:
+            text = " "*(16-len(text)) + text
+        self.rolling_text = text
+        self._roll_next(delay, False)
+            
+    def _roll_next(self, delay, rotate=True):
+        if self.rolling_text:
+            if rotate:
+                self.rolling_text = self.rolling_text[1:] + self.rolling_text[0]
+            self.lcd.clear()
+            self.lcd.message(self.rolling_text)
+            Timer(delay, self._roll_next, args=(delay,True)).start()
+        
+    def cursor_home(self):
+        self.lcd.home()
+        
+    def cursor_position(self, col, row):
+        self.lcd.set_cursor(col, row)
+        
+    def cursor_visible(self, visible):
+        self.lcd.show_cursor(visible)
+        
+    def cursor_blink(self, blink):
+        self.lcd.blink(blink)
+        
+    def cursor_move(self, right=True):
+        if self.DIRECTION_LEFT:
+            self.lcd.move_left()
         else:
-            GPIO.output(self.pin, 0)
+            self.lcd.move_right()
             
-            
-class MultiLED(object):
-    
-    STATE_NO_LIGHT = 0
-    STATE_BLINK = 1
-    STATE_ROUND_ROBIN = 2
-    STATE_FULL_LIGHT = 3
-    
-    def __init__(self, leds):
-        self.leds = leds
-        self.speed = 2
-        self.state = None
-        self.rr_led = 0
-        self.timer = None
-        self.set_state(self.STATE_NO_LIGHT) # Reset LEDs
+    def autoscroll(self, autoscroll):
+        self.lcd.autoscroll(autoscroll)
         
-    def get_state(self):
-        return self.state
+    def clear(self):
+        self.lcd.clear()
         
-    def set_state(self, new_state):
-        if self.state == new_state:
-            return
-
-        if self.timer:
-            self.timer.cancel()
-            self.rr_led = 0
-        
-        print("New MultiLED state : %d" % new_state)
-        self.state = new_state
-        if new_state == self.STATE_FULL_LIGHT:
-            for led in self.leds:
-                led.set_state(1)
-        else:
-            # Reset all lights
-            for led in self.leds:
-                led.set_state(0)
-            # Start periodical updates
-            if self.state != self.STATE_NO_LIGHT:
-                self.update()
-            
-    def update(self):
-        self.timer = threading.Timer(1/self.speed, self.update)
-        self.timer.start()
-        
-        if self.state == self.STATE_BLINK:
-            toggled_state = not self.leds[0].is_active()
-            for led in self.leds:
-                led.set_state(toggled_state)
-        elif self.state == self.STATE_ROUND_ROBIN:
-            self.leds[self.rr_led].set_state(0)
-            self.rr_led = (self.rr_led+1)%len(self.leds)
-            self.leds[self.rr_led].set_state(1)
-        
+    def terminate(self):
+        self.rolling_text = None
+        self.clear()

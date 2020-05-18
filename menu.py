@@ -9,26 +9,28 @@ class MenuTraverser:
         self.state = {}
         self.on_menu_traversal = on_menu_traversal
         
-    def make_sure_active_menu_initiated(self):
+    def prepare_menu(self):
         if not self.active_menu:
             if self.menu.child:
                 self.active_menu = self.menu.child
             else:
                 self.active_menu = self.menu
+            self.on_menu_traversal()
+                
+    def goto_root(self):
+        self.active_menu = self.menu
+        self.on_menu_traversal()
         
     def prev(self):
-        self.make_sure_active_menu_initiated()
         print("Move from %s to %s" % (self.active_menu.title, self.active_menu.prev.title))
         self.active_menu = self.active_menu.prev
         self.on_menu_traversal()
         
     def next(self):
-        self.make_sure_active_menu_initiated()
         self.active_menu = self.active_menu.next
         self.on_menu_traversal()
         
     def back(self):
-        self.make_sure_active_menu_initiated()
         if self.active_menu.in_action:
             self.active_menu.in_action = False
         else:
@@ -37,7 +39,6 @@ class MenuTraverser:
         self.on_menu_traversal()
         
     def enter(self):
-        self.make_sure_active_menu_initiated()
         if self.active_menu.is_navigation_only():
             if self.active_menu.child:
                 self.active_menu = self.active_menu.child
