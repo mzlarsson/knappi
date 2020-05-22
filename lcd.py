@@ -7,12 +7,12 @@ from threading import Timer
 Default pin setup
 =================
 lcd_rs = 16
-lcd_en = 19
+lcd_en = 14
 lcd_d4 = 25
 lcd_d5 = 11
 lcd_d6 = 23
 lcd_d7 = 22
-lcd_backlight = 2
+lcd_backlight = 19
 """
 
 class LCD(object):
@@ -20,8 +20,8 @@ class LCD(object):
     DIRECTION_RIGHT = 0
     DIRECTION_LEFT = 1
 
-    def __init__(self, rs=16, en=19, d4=25, d5=11, d6=23, d7=22):
-        self.lcd = AF_LCD.Adafruit_CharLCD(rs, en, d4, d5, d6, d7, 16, 2)
+    def __init__(self, rs=16, en=14, d4=25, d5=11, d6=23, d7=22, bl=19):
+        self.lcd = AF_LCD.Adafruit_CharLCD(rs, en, d4, d5, d6, d7, 16, 2, bl, enable_pwm=True, invert_polarity=False)
         self.rolling_text = None
         
     def width(self):
