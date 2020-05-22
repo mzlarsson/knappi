@@ -1,5 +1,7 @@
 
 from menu import MenuTraverser
+from tts import say
+from spdt import SPDT
 
 class VirtualFlowHandler:
 
@@ -55,6 +57,13 @@ class PhysicalFlowHandler:
             if time > 3 and time < 4:
                 self.menu_handler.goto_root()
                 self.display.enable_backlight(False)
+        def handle_spdt_change(spdt, state):
+            if state == SPDT.SPDT_ON_TOP:
+                say("Sound and voice on")
+            elif state == SPDT.SPDT_OFF:
+                say("Sound on, voice off")
+            elif state == SPDT.SPDT_ON_BOTTOM:
+                say("Sound and voice off")
 
         GPIO.setmode(GPIO.BCM)
         self.buttonPrev.onPress(lambda _: self.menu_handler.prev())
@@ -63,7 +72,7 @@ class PhysicalFlowHandler:
         self.buttonNext.onHold(handle_prev_hold)
         self.buttonAction.onRelease(handle_action_button_release)
         self.buttonAction.onHold(lambda _, __: self.menu_handler.back())
-        self.spdt.onChanged(lambda _, state: print("SPDT state: %d" % state))
+        self.spdt.onChanged(handle_spdt_change)
 
     def process_flow(self):
         self.menu_handler.prepare_menu()
