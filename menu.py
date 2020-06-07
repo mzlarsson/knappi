@@ -1,4 +1,6 @@
 
+import threading
+
 class MenuTraverser:
 
     def __init__(self, on_menu_traversal):
@@ -36,16 +38,16 @@ class MenuTraverser:
         else:
             self.active_menu = self.active_menu.parent
             self.active_menu.reset()
-        self.on_menu_traversal()
+            self.on_menu_traversal()
         
     def enter(self):
         if self.active_menu.is_navigation_only():
             if self.active_menu.child:
                 self.active_menu = self.active_menu.child
+                self.on_menu_traversal()
         else:
             self.active_menu.in_action = True
             self.active_menu.do_action(self.state)
-        self.on_menu_traversal()
             
     def is_in_action(self):
         return self.active_menu is not None and self.active_menu.in_action
@@ -91,7 +93,7 @@ class Menu:
         self.action = action
         
     def do_action(self, state):
-        self.action(state)
+        threading.Thread(target=self.action, args=(state,)).start()
         
     def stringify(self, tab=0, render_siblings=True):
         text = "%s[%s]%s\n" % ('\t'*tab, self.title, ' (active)' if self.in_action else '')

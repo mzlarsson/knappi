@@ -23,6 +23,7 @@ class LCD(object):
     def __init__(self, rs=16, en=14, d4=25, d5=11, d6=23, d7=22, bl=19):
         self.lcd = AF_LCD.Adafruit_CharLCD(rs, en, d4, d5, d6, d7, 16, 2, bl, enable_pwm=True, invert_polarity=False)
         self.rolling_text = None
+        self.current_text = None
         
     def width(self):
         return 16
@@ -37,7 +38,7 @@ class LCD(object):
         self.lcd.set_backlight(1 if enable else 0)
         
     def set_text(self, text, clean=True, center=False):
-        self.rolling_text = None        
+        self.rolling_text = None
         if clean:
             self.clear()
         if center:
@@ -46,6 +47,8 @@ class LCD(object):
                     line = " "*int((self.width()-len(line))/2) + line
                 return line
             text = "\n".join(list(map(center_line, text.split("\n"))))
+            
+        self.current_text = text
 
         print("Printing '%s'" % text)
         self.lcd.message(text)
@@ -91,3 +94,19 @@ class LCD(object):
     def terminate(self):
         self.rolling_text = None
         self.clear()
+
+class LCDBottom:
+
+    def __init__(self, lcd):
+        self.lcd = lcd
+        self.current_text = None
+        
+    def set_text(self, text, center=False):
+        upper_text = self.lcd.current_text.split("\n")[0]
+        lower_text = text
+        if len(text) < 16 and center:
+            lower_text = " "*int((self.lcd.width()-len(text))/2) + text
+            
+        self.current_text = lower_text
+            
+        self.lcd.set_text(upper_text + "\n" + lower_text)

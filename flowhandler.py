@@ -2,6 +2,7 @@
 from menu import MenuTraverser
 from tts import say
 from spdt import SPDT
+from lcd import LCDBottom
 
 class VirtualFlowHandler:
 
@@ -42,8 +43,10 @@ class PhysicalFlowHandler:
         self.buttonAction = buttonAction
         self.spdt = spdt
         self.display = display
+        self.user_display = LCDBottom(self.display)
         # Menu handler
         self.menu_handler = MenuTraverser(self.update_display)
+        self.menu_handler.state["display"] = self.user_display
         # Init
         self.setup_events()
 
@@ -92,10 +95,7 @@ class PhysicalFlowHandler:
         self.teardown()
 
     def update_display(self):
-        text = self.menu_handler.active_menu.title
-        if self.menu_handler.is_in_action():
-            text += "\n(active)"
-        self.display.set_text(text, center=True)
+        self.display.set_text(self.menu_handler.active_menu.title, center=True)
 
     def add_submenu(self, submenu):
         self.menu_handler.menu.add_submenu(submenu)

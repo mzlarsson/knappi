@@ -24,7 +24,7 @@ class SPDT(object):
         
         if GPIO.input(self.pin_top):
             self.state = self.SPDT_ON_TOP
-        elif GPIO.input(self.pin_bottom):
+        elif GPIO.input(self.pin_bot):
             self.state = self.SPDT_ON_BOTTOM
         else:
             self.state = self.SPDT_OFF
